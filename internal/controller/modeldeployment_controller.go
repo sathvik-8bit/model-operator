@@ -19,12 +19,12 @@ package controller
 import (
 	"context"
 
+	mlopsv1 "github.com/sathvik-8bit/model-operator/api/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
-
-	mlopsv1 "github.com/sathvik-8bit/model-operator/api/v1"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 // ModelDeploymentReconciler reconciles a ModelDeployment object
@@ -36,20 +36,44 @@ type ModelDeploymentReconciler struct {
 // +kubebuilder:rbac:groups=mlops.sathvik.dev,resources=modeldeployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=mlops.sathvik.dev,resources=modeldeployments/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=mlops.sathvik.dev,resources=modeldeployments/finalizers,verbs=update
+// +kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the ModelDeployment object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
+
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.21.0/pkg/reconcile
 func (r *ModelDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = logf.FromContext(ctx)
+	log := log.FromContext(ctx)
 
-	// TODO(user): your logic here
+	var md mlopsv1.ModelDeployment
+	if err := r.Get(ctx, req.NamespacedName, &md); err != nil {
+		// Object deleted — ignore
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	switch md.Status.Phase {
+	case "":
+		log.Info("New deployment detected, setting status to Validating")
+		md.Status.Phase = "Validating"
+		md.Status.Message = "Starting model validation"
+		if err := r.Status().Update(ctx, &md); err != nil {
+			log.Error(err, "unable to update status to Validating")
+			return ctrl.Result{}, err
+		}
+		// Continue on next reconcile loop
+		return ctrl.Result{Requeue: true}, nil
+
+	case "Validating":
+		// Check if validation Job exists. If not, create it.
+		// If Job succeeded → proceed to deployment.
+		// If Job failed → mark status as Failed.
+		// (Implemented in next step.)
+
+	default:
+		log.Info("No action required", "phase", md.Status.Phase)
+	}
 
 	return ctrl.Result{}, nil
 }
@@ -58,6 +82,7 @@ func (r *ModelDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 func (r *ModelDeploymentReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&mlopsv1.ModelDeployment{}).
+		Owns(&batchv1.Job{}).
 		Named("modeldeployment").
 		Complete(r)
 }
