@@ -122,6 +122,7 @@ func (r *ModelDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	switch md.Status.Phase {
 	case "":
 		log.Info("New deployment detected, setting status to Validating")
+		deploymentsCreated.Inc()
 		md.Status.Phase = "Validating"
 		md.Status.Message = "Starting model validation"
 		if err := r.Status().Update(ctx, &md); err != nil {
@@ -151,6 +152,7 @@ func (r *ModelDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 				return ctrl.Result{}, err
 			}
 			log.Info("Validation job created", "job", job.Name)
+			validationsRun.WithLabelValues("started").Inc()			
 			return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
 		}
 
@@ -159,6 +161,7 @@ func (r *ModelDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		for _, c := range job.Status.Conditions {
 			if c.Type == batchv1.JobComplete && c.Status == corev1.ConditionTrue {
 				// ✅ Validation succeeded
+				validationsRun.WithLabelValues("success").Inc()
 				md.Status.Phase = "Deploying"
 				md.Status.Message = "Validation passed, proceeding to deploy model"
 				if err := r.Status().Update(ctx, &md); err != nil {
@@ -169,6 +172,7 @@ func (r *ModelDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 			if c.Type == batchv1.JobFailed && c.Status == corev1.ConditionTrue {
 				// ❌ Validation failed
+				validationsRun.WithLabelValues("failure").Inc()
 				md.Status.Phase = "Failed"
 				md.Status.Message = fmt.Sprintf("Validation failed: %s", c.Message)
 				if err := r.Status().Update(ctx, &md); err != nil {
