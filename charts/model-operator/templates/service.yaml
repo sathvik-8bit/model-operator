@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: model-operator-metrics
+spec:
+  selector:
+    app: model-operator
+  ports:
+    - name: metrics
+      port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.port }}

@@ -242,7 +242,7 @@ func buildValidationJob(md *mlopsv1.ModelDeployment) *batchv1.Job {
 					Containers: []corev1.Container{
 						{
 							Name:  "validate",
-							Image: "yourorg/validator:latest", // you’ll build this image
+							Image: "sathvik-8bit/validator:latest", // you’ll build this image
 							Command: []string{"python", md.Spec.ValidateScript},
 							Env: []corev1.EnvVar{
 								{Name: "MODEL_URI", Value: md.Spec.ModelURI},

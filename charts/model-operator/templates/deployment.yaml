@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: model-operator
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: model-operator
+  template:
+    metadata:
+      labels:
+        app: model-operator
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ .Values.service.port }}"
+    spec:
+      containers:
+          - name: operator
+            image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+            imagePullPolicy: {{ .Values.image.pullPolicy }}
+            command: ["/manager"]
+            ports:
+              - containerPort: {{ .Values.service.port }}
+            resources:
+              {{- toYaml .Values.resources | nindent 14 }}

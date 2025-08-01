@@ -1,0 +1,15 @@
+replicaCount: 1
+
+image:
+  repository: sathvik-8bit/model-operator
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  port: 8080
+
+resources: {}
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
