@@ -1,0 +1,17 @@
+apiVersion: mlops.sathvik.dev/v1
+kind: ModelDeployment
+metadata:
+  name: dummy-model
+spec:
+  modelURI: https://example.com/model.pkl
+  runtime: triton
+  version: v0-dummy
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "200m"
+      memory: "256Mi"
+  validateScript: validate.py
+  autoscale: false

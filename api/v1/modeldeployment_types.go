@@ -7,7 +7,7 @@ import (
 
 // ModelDeploymentSpec defines the desired state of ModelDeployment
 type ModelDeploymentSpec struct {
-	// +kubebuilder:validation:Pattern=`^s3://.+`
+	
 	ModelURI string `json:"modelURI"`
 
 	// +kubebuilder:validation:Enum=triton;torchserve
@@ -19,6 +19,7 @@ type ModelDeploymentSpec struct {
 	ValidateScript string `json:"validateScript,omitempty"`
 
 	Autoscale bool `json:"autoscale"`
+	Version string `json:"version"`
 }
 
 // ModelDeploymentStatus defines the observed state of ModelDeployment

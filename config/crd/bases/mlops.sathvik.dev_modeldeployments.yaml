@@ -42,7 +42,6 @@ spec:
               autoscale:
                 type: boolean
               modelURI:
-                pattern: ^s3://.+
                 type: string
               resources:
                 description: ResourceRequirements describes the compute resource requirements.
@@ -111,11 +110,14 @@ spec:
               validateScript:
                 description: Optional script to run for validation
                 type: string
+              version:
+                type: string
             required:
             - autoscale
             - modelURI
             - resources
             - runtime
+            - version
             type: object
           status:
             description: ModelDeploymentStatus defines the observed state of ModelDeployment

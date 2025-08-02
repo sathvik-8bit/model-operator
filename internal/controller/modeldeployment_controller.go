@@ -19,6 +19,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -81,6 +82,12 @@ func (r *ModelDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	log := log.FromContext(ctx)
 
 	var md mlopsv1.ModelDeployment
+
+	if err := r.Get(ctx, req.NamespacedName, &md); err != nil {
+		// Object deleted — ignore
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
 	if md.ObjectMeta.DeletionTimestamp.IsZero() {
 		// Not being deleted
 		if !containsString(md.ObjectMeta.Finalizers, modelDeploymentFinalizer) {
@@ -113,12 +120,6 @@ func (r *ModelDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, nil
 	}
 
-	
-	if err := r.Get(ctx, req.NamespacedName, &md); err != nil {
-		// Object deleted — ignore
-		return ctrl.Result{}, client.IgnoreNotFound(err)
-	}
-
 	switch md.Status.Phase {
 	case "":
 		log.Info("New deployment detected, setting status to Validating")
@@ -130,7 +131,7 @@ func (r *ModelDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			return ctrl.Result{}, err
 		}
 		// Continue on next reconcile loop
-		return ctrl.Result{Requeue: true}, nil
+		return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
 
 	case "Validating":
 		// Check if validation Job exists. If not, create it.
@@ -174,7 +175,19 @@ func (r *ModelDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 				// ❌ Validation failed
 				validationsRun.WithLabelValues("failure").Inc()
 				md.Status.Phase = "Failed"
-				md.Status.Message = fmt.Sprintf("Validation failed: %s", c.Message)
+				md.Status.Message = fmt.Sprintf("Validation failed for version %s: %s", md.Spec.Version, c.Message)
+
+				// rollback: if previous version exists, revert modelURI + version
+				if md.Status.Version != "" && md.Status.Version != md.Spec.Version {
+					log.Info("Rolling back to previous version", "version", md.Status.Version)
+
+					md.Spec.Version = md.Status.Version
+					md.Spec.ModelURI = strings.Replace(md.Spec.ModelURI, md.Spec.Version, md.Status.Version, 1)
+
+					if err := r.Update(ctx, &md); err != nil {
+						return ctrl.Result{}, err
+					}
+				}
 				if err := r.Status().Update(ctx, &md); err != nil {
 					return ctrl.Result{}, err
 				}
@@ -202,6 +215,7 @@ func (r *ModelDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 			md.Status.Phase = "Ready"
 			md.Status.Message = "Model deployed and service available"
+			md.Status.Version = md.Spec.Version
 			if err := r.Status().Update(ctx, &md); err != nil {
 				return ctrl.Result{}, err
 			}
@@ -242,7 +256,7 @@ func buildValidationJob(md *mlopsv1.ModelDeployment) *batchv1.Job {
 					Containers: []corev1.Container{
 						{
 							Name:  "validate",
-							Image: "sathvik-8bit/validator:latest", // you’ll build this image
+							Image: "validator:dev", // you’ll build this image
 							Command: []string{"python", md.Spec.ValidateScript},
 							Env: []corev1.EnvVar{
 								{Name: "MODEL_URI", Value: md.Spec.ModelURI},
