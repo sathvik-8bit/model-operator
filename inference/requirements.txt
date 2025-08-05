@@ -1,0 +1,4 @@
+fastapi[all]
+torch
+torchvision
+uvicorn

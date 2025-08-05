@@ -106,6 +106,9 @@ spec:
                 enum:
                 - triton
                 - torchserve
+                - fastapi-pytorch
+                type: string
+              runtimeImage:
                 type: string
               validateScript:
                 description: Optional script to run for validation

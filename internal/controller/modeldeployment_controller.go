@@ -293,7 +293,8 @@ func buildModelDeployment(md *mlopsv1.ModelDeployment) *appsv1.Deployment {
 					Containers: []corev1.Container{
 						{
 							Name:  "inference",
-							Image: runtimeToImage(md.Spec.Runtime),
+							Image: runtimeToImage(md.Spec.Runtime, md.Spec.RuntimeImage),
+							ImagePullPolicy: corev1.PullNever,
 							Env: []corev1.EnvVar{
 								{Name: "MODEL_URI", Value: md.Spec.ModelURI},
 							},
@@ -326,12 +327,18 @@ func buildModelService(md *mlopsv1.ModelDeployment) *corev1.Service {
 	}
 }
 
-func runtimeToImage(runtime string) string {
+func runtimeToImage(runtime string, imageOverride *string) string {
+	if imageOverride != nil && *imageOverride != "" {
+		return *imageOverride
+	}
+
 	switch runtime {
 	case "triton":
 		return "nvcr.io/nvidia/tritonserver:22.08-py3"
 	case "torchserve":
 		return "pytorch/torchserve:latest"
+	case "fastapi-pytorch":
+		return "fastapi-pytorch:dev" 
 	default:
 		return "unknown"
 	}

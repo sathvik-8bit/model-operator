@@ -1,0 +1,19 @@
+apiVersion: mlops.sathvik.dev/v1
+kind: ModelDeployment
+metadata:
+  name: dummy-model
+  namespace: default
+spec:
+  modelURI: http://host.docker.internal:8080/dummy_model.pt
+  runtime: fastapi-pytorch
+  runtimeImage: fastapi-pytorch:dev
+  validateScript: validate.py
+  autoscale: false
+  version: v1
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi

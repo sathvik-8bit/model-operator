@@ -10,7 +10,7 @@ type ModelDeploymentSpec struct {
 	
 	ModelURI string `json:"modelURI"`
 
-	// +kubebuilder:validation:Enum=triton;torchserve
+	// +kubebuilder:validation:Enum=triton;torchserve;fastapi-pytorch
 	Runtime string `json:"runtime"`
 
 	Resources corev1.ResourceRequirements `json:"resources"`
@@ -20,6 +20,8 @@ type ModelDeploymentSpec struct {
 
 	Autoscale bool `json:"autoscale"`
 	Version string `json:"version"`
+	RuntimeImage *string `json:"runtimeImage,omitempty"` // Optional override
+
 }
 
 // ModelDeploymentStatus defines the observed state of ModelDeployment

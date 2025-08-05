@@ -3,15 +3,16 @@ kind: ModelDeployment
 metadata:
   name: dummy-model
 spec:
-  modelURI: https://example.com/model.pkl
-  runtime: triton
-  version: v0-dummy
+  modelURI: https://dummy.com/dummy_model.pt
+  runtime: fastapi-pytorch
+  runtimeImage: "localhost/fastapi-pytorch:dev" # <-- override used
   resources:
-    requests:
-      cpu: "100m"
-      memory: "128Mi"
     limits:
-      cpu: "200m"
+      cpu: "500m"
+      memory: "512Mi"
+    requests:
+      cpu: "250m"
       memory: "256Mi"
-  validateScript: validate.py
+  validateScript: "validate.py"
   autoscale: false
+  version: v1
