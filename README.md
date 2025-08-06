@@ -251,7 +251,7 @@ kubectl port-forward -n model-operator-system deployment/model-operator-controll
 curl http://localhost:8080/metrics
 ```
 
-## 🧪 Testing
+## 🧪 Testing (If you have written your test cases)
 
 ### Unit Tests
 
@@ -331,19 +331,6 @@ kubectl describe modeldeployment <name>
 kubectl describe deployment <name>
 kubectl describe service <name>
 ```
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Run tests: `make test`
-5. Run linting: `make lint`
-6. Submit a pull request
-
-## 📄 License
-
-This project is licensed under the Apache License 2.0 - see the LICENSE file for details.
 
 ## 🔗 Related Projects
 
