@@ -3,13 +3,15 @@ kind: ModelDeployment
 metadata:
   name: dummy-model
   namespace: default
+  labels:
+    prometheus: enabled
 spec:
   modelURI: http://host.docker.internal:8080/dummy_model.pt
   runtime: fastapi-pytorch
   runtimeImage: fastapi-pytorch:dev
   validateScript: validate.py
   autoscale: false
-  version: v1
+  version: v2
   resources:
     limits:
       cpu: 200m

@@ -2,3 +2,4 @@ fastapi[all]
 torch
 torchvision
 uvicorn
+prometheus-fastapi-instrumentator
